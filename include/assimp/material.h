@@ -297,6 +297,7 @@ enum aiTextureType {
     * on top of the 'base' PBR materials for additional realism.
     * These use multiple texture maps, so only the base type is directly defined
     */
+    aiTextureType_PBR_MTL = 18,
 
     /** Sheen
     * Generally used to simulate textiles that are covered in a layer of microfibers
