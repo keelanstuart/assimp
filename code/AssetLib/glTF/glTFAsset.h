@@ -1021,6 +1021,7 @@ public:
     LazyDict<Light> lights; // KHR_materials_common ext
 
     Ref<Scene> scene;
+    std::vector<Ref<Image>> imageRefs; // reference all images to keep them around, even if they aren't referenced by textures -> materials -> meshes
 
 public:
     Asset(IOSystem *io = 0) :

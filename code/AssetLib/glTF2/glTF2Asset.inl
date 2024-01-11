@@ -1929,6 +1929,16 @@ inline void Asset::Load(const std::string &pFile, bool isBinary)
         }
     }
 
+	if (Value *imagesArray = FindArray(doc, "images"))
+	{
+		unsigned int imageCount = imagesArray->Size();
+		this->imageRefs.reserve(imageCount);
+		for (unsigned int imageIdx = 0; imageIdx < imageCount; ++imageIdx)
+		{
+			this->imageRefs.push_back(images.Retrieve(imageIdx));
+		}
+	}
+
     if (Value *skinsArray = FindArray(doc, "skins")) {
         for (unsigned int i = 0; i < skinsArray->Size(); ++i) {
             skins.Retrieve(i);

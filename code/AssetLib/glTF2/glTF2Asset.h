@@ -1154,6 +1154,7 @@ public:
     LazyDict<Texture> textures;
 
     Ref<Scene> scene;
+    std::vector<Ref<Image>> imageRefs; // reference all images to keep them around, even if they aren't referenced by textures -> materials -> meshes
 
 public:
     Asset(IOSystem *io = nullptr, rapidjson::IRemoteSchemaDocumentProvider *schemaDocumentProvider = nullptr) : 
