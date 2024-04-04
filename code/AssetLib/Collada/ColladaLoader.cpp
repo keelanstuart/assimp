@@ -1133,7 +1133,7 @@ void ColladaLoader::CreateAnimation(aiScene *pScene, const ColladaParser &pParse
         }
 
         // now check all channels if they affect the current node
-        std::string targetID, subElement;
+        std::string subElement;
         for (std::vector<AnimationChannel>::const_iterator cit = pSrcAnim->mChannels.begin();
                 cit != pSrcAnim->mChannels.end(); ++cit) {
             const AnimationChannel &srcChannel = *cit;
@@ -1162,9 +1162,8 @@ void ColladaLoader::CreateAnimation(aiScene *pScene, const ColladaParser &pParse
                 continue;
             }
 
-            targetID.clear();
-            targetID = srcChannel.mTarget.substr(0, slashPos);
-            if (targetID != srcNode->mID) {
+            entry.mTargetId = srcChannel.mTarget.substr(0, slashPos);
+            if (entry.mTargetId != nodeName) {
                 continue;
             }
 
@@ -1236,9 +1235,12 @@ void ColladaLoader::CreateAnimation(aiScene *pScene, const ColladaParser &pParse
 
             // determine which transform step is affected by this channel
             entry.mTransformIndex = SIZE_MAX;
-            for (size_t a = 0; a < srcNode->mTransforms.size(); ++a)
-                if (srcNode->mTransforms[a].mID == entry.mTransformId)
+            for (size_t a = 0; a < srcNode->mTransforms.size(); ++a) {
+                if (srcNode->mTransforms[a].mID == entry.mTransformId) {
                     entry.mTransformIndex = a;
+                    break;
+                }
+            }
 
             if (entry.mTransformIndex == SIZE_MAX) {
                 if (entry.mTransformId.find("morph-weights") == std::string::npos) {
