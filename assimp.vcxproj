@@ -64,7 +64,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;code;.;contrib\pugixml\src;contrib\rapidjson\include;contrib;contrib\unzip;contrib\openddlparser\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;code;.;contrib\pugixml\src;contrib\rapidjson\include;contrib;contrib\unzip;contrib\openddlparser\include;contrib\utf8cpp\source;contrib\utf8cpp\source\utf8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -80,7 +80,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;ASSIMP_BUILD_NO_OWN_ZLIB;_DEBUG;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;MINIZ_USE_UNALIGNED_LOADS_AND_STORES=0;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;ASSIMP_BUILD_DLL_EXPORT;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;ASSIMP_BUILD_NO_OWN_ZLIB;INCLUDECRYPTINGCODE_IFCRYPTALLOWED;ASSIMP_BUILD_NO_GLTF1;_DEBUG;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;MINIZ_USE_UNALIGNED_LOADS_AND_STORES=0;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;ASSIMP_BUILD_DLL_EXPORT;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>code\Debug\assimp-vc142-mtd.pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -104,7 +104,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;code;.;contrib\pugixml\src;contrib\rapidjson\include;contrib;contrib\unzip;contrib\openddlparser\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;code;.;contrib\pugixml\src;contrib\rapidjson\include;contrib;contrib\unzip;contrib\openddlparser\include;contrib\utf8cpp\source;contrib\utf8cpp\source\utf8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -119,7 +119,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;ASSIMP_BUILD_NO_OWN_ZLIB;NDEBUG;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;MINIZ_USE_UNALIGNED_LOADS_AND_STORES=0;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;ASSIMP_BUILD_DLL_EXPORT;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;ASSIMP_BUILD_NO_OWN_ZLIB;INCLUDECRYPTINGCODE_IFCRYPTALLOWED;ASSIMP_BUILD_NO_GLTF1;NDEBUG;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;MINIZ_USE_UNALIGNED_LOADS_AND_STORES=0;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;ASSIMP_BUILD_DLL_EXPORT;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>\code\Release\assimp-vc142-mt.pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -142,15 +142,24 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="code\AssetLib\glTF\glTFExporter.cpp" />
+    <ClCompile Include="code\AssetLib\glTF\glTFImporter.cpp" />
+    <ClCompile Include="code\AssetLib\IQM\IQMImporter.cpp" />
     <ClCompile Include="code\Common\Assimp.cpp" />
-    <ResourceCompile Include="code\res\assimp.rc" />
     <ClCompile Include="code\CApi\CInterfaceIOWrapper.cpp" />
+    <ClInclude Include="code\AssetLib\glTF\glTFExporter.h" />
+    <ClInclude Include="code\AssetLib\glTF\glTFImporter.h" />
+    <ClInclude Include="code\AssetLib\IQM\iqm.h" />
+    <ClInclude Include="code\AssetLib\IQM\IQMImporter.h" />
     <ClInclude Include="code\CApi\CInterfaceIOWrapper.h" />
+    <ClCompile Include="code\Common\Base64.cpp" />
     <ClCompile Include="code\Common\BaseImporter.cpp" />
     <ClCompile Include="code\Common\BaseProcess.cpp" />
     <ClInclude Include="code\Common\BaseProcess.h" />
+    <ClInclude Include="code\Common\Compression.h" />
     <ClInclude Include="code\Common\Importer.h" />
     <ClInclude Include="code\Common\ScenePrivate.h" />
+    <ClCompile Include="code\Common\Compression.cpp" />
     <ClCompile Include="code\Common\PostStepRegistry.cpp" />
     <ClCompile Include="code\Common\ImporterRegistry.cpp" />
     <ClInclude Include="code\Common\DefaultProgressHandler.h" />
@@ -182,6 +191,8 @@
     <ClCompile Include="code\Common\material.cpp" />
     <ClCompile Include="code\Common\AssertHandler.cpp" />
     <ClCompile Include="code\Common\Exceptional.cpp" />
+    <ClInclude Include="code\Geometry\GeometryUtils.h" />
+    <ClInclude Include="contrib\utf8cpp\source\utf8.h" />
     <ClInclude Include="include\assimp\DefaultLogger.hpp" />
     <ClInclude Include="include\assimp\LogStream.hpp" />
     <ClInclude Include="include\assimp\Logger.hpp" />
@@ -193,6 +204,7 @@
     <ClCompile Include="code\Common\Exporter.cpp" />
     <ClCompile Include="code\CApi\AssimpCExport.cpp" />
     <ClInclude Include="include\assimp\BlobIOSystem.h" />
+    <ClCompile Include="code\Geometry\GeometryUtils.cpp" />
     <ClCompile Include="code\PostProcessing\CalcTangentsProcess.cpp" />
     <ClInclude Include="code\PostProcessing\CalcTangentsProcess.h" />
     <ClCompile Include="code\PostProcessing\ComputeUVMappingProcess.cpp" />
@@ -491,8 +503,6 @@
     <ClInclude Include="code\AssetLib\glTF\glTFAsset.inl" />
     <ClInclude Include="code\AssetLib\glTF\glTFAssetWriter.h" />
     <ClInclude Include="code\AssetLib\glTF\glTFAssetWriter.inl" />
-    <ClCompile Include="code\AssetLib\glTF\glTFImporter.cpp" />
-    <ClInclude Include="code\AssetLib\glTF\glTFImporter.h" />
     <ClInclude Include="code\AssetLib\glTF2\glTF2Asset.h" />
     <ClInclude Include="code\AssetLib\glTF2\glTF2Asset.inl" />
     <ClInclude Include="code\AssetLib\glTF2\glTF2AssetWriter.h" />
@@ -546,8 +556,6 @@
     <ClCompile Include="code\AssetLib\X\XFileExporter.cpp" />
     <ClCompile Include="code\AssetLib\X3D\X3DExporter.cpp" />
     <ClInclude Include="code\AssetLib\X3D\X3DExporter.hpp" />
-    <ClInclude Include="code\AssetLib\glTF\glTFExporter.h" />
-    <ClCompile Include="code\AssetLib\glTF\glTFExporter.cpp" />
     <ClInclude Include="code\AssetLib\glTF2\glTF2Exporter.h" />
     <ClCompile Include="code\AssetLib\glTF2\glTF2Exporter.cpp" />
     <ClInclude Include="code\AssetLib\3MF\D3MFExporter.h" />

@@ -3,7 +3,7 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2021, assimp team
+Copyright (c) 2006-2024, assimp team
 
 
 
@@ -57,12 +57,6 @@ using namespace Assimp;
 // Constructor to be privately used by Importer
 CalcTangentsProcess::CalcTangentsProcess() :
         configMaxAngle(float(AI_DEG_TO_RAD(45.f))), configSourceUV(0) {
-    // nothing to do here
-}
-
-// ------------------------------------------------------------------------------------------------
-// Destructor, private as well
-CalcTangentsProcess::~CalcTangentsProcess() {
     // nothing to do here
 }
 

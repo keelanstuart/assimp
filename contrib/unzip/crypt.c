@@ -48,13 +48,15 @@
 #   pragma warning(disable : 4244)
 #endif // _WIN32
 
-/***************************************************************************/
-
-#define CRC32(c, b) ((*(pcrc_32_tab+(((uint32_t)(c) ^ (b)) & 0xff))) ^ ((c) >> 8))
-
 #ifndef ZCR_SEED2
 #  define ZCR_SEED2 3141592654UL     /* use PI as default pattern */
 #endif
+
+/***************************************************************************/
+
+#if 0
+
+#define CRC32(c, b) ((*(pcrc_32_tab+(((uint32_t)(c) ^ (b)) & 0xff))) ^ ((c) >> 8))
 
 /***************************************************************************/
 
@@ -91,6 +93,8 @@ void init_keys(const char *passwd, uint32_t *pkeys, const z_crc_t *pcrc_32_tab)
         passwd += 1;
     }
 }
+
+#endif
 
 /***************************************************************************/
 
@@ -138,6 +142,7 @@ int cryptrand(unsigned char *buf, unsigned int len)
     return rlen;
 }
 
+#if 0
 int crypthead(const char *passwd, uint8_t *buf, int buf_size, uint32_t *pkeys, 
               const z_crc_t *pcrc_32_tab, uint8_t verify1, uint8_t verify2)
 {
@@ -163,6 +168,7 @@ int crypthead(const char *passwd, uint8_t *buf, int buf_size, uint32_t *pkeys,
     buf[n++] = (uint8_t)zencode(pkeys, pcrc_32_tab, verify2, t);
     return n;
 }
+#endif
 
 #ifdef _WIN32
 #   pragma warning(pop)

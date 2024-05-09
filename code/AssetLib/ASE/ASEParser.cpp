@@ -3,7 +3,7 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2021, assimp team
+Copyright (c) 2006-2024, assimp team
 
 All rights reserved.
 
@@ -53,7 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assimp/fast_atof.h>
 #include <assimp/DefaultLogger.hpp>
 
-using namespace Assimp;
+namespace Assimp {
 using namespace Assimp::ASE;
 
 // ------------------------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ using namespace Assimp::ASE;
             return;                                \
         }                                          \
     }                                              \
-    else if ('\0' == *filePtr) {                   \
+    if ('\0' == *filePtr) {                        \
         return;                                    \
     }                                              \
     if (IsLineEnd(*filePtr) && !bLastWasEndLine) { \
@@ -110,9 +110,12 @@ using namespace Assimp::ASE;
     ++filePtr;
 
 // ------------------------------------------------------------------------------------------------
-Parser::Parser(const char *szFile, unsigned int fileFormatDefault) {
+Parser::Parser(const char *szFile, unsigned int fileFormatDefault) :
+        filePtr(nullptr), mEnd (nullptr) {
     ai_assert(nullptr != szFile);
+
     filePtr = szFile;
+    mEnd = filePtr + std::strlen(filePtr);
     iFileFormat = fileFormatDefault;
 
     // make sure that the color values are invalid
@@ -178,14 +181,22 @@ bool Parser::SkipToNextToken() {
     while (true) {
         char me = *filePtr;
 
+        if (filePtr == mEnd) {
+            return false;
+        }
+
         // increase the line number counter if necessary
         if (IsLineEnd(me) && !bLastWasEndLine) {
             ++iLineNumber;
             bLastWasEndLine = true;
         } else
             bLastWasEndLine = false;
-        if ('*' == me || '}' == me || '{' == me) return true;
-        if ('\0' == me) return false;
+        if ('*' == me || '}' == me || '{' == me) {
+            return true;
+        }
+        if ('\0' == me) {
+            return false;
+        }
 
         ++filePtr;
     }
@@ -263,7 +274,7 @@ void Parser::Parse() {
             if (TokenMatch(filePtr, "GEOMOBJECT", 10))
 
             {
-                m_vMeshes.push_back(Mesh("UNNAMED"));
+                m_vMeshes.emplace_back("UNNAMED");
                 ParseLV1ObjectBlock(m_vMeshes.back());
                 continue;
             }
@@ -271,7 +282,7 @@ void Parser::Parse() {
             if (TokenMatch(filePtr, "HELPEROBJECT", 12))
 
             {
-                m_vDummies.push_back(Dummy());
+                m_vDummies.emplace_back();
                 ParseLV1ObjectBlock(m_vDummies.back());
                 continue;
             }
@@ -279,13 +290,13 @@ void Parser::Parse() {
             if (TokenMatch(filePtr, "LIGHTOBJECT", 11))
 
             {
-                m_vLights.push_back(Light("UNNAMED"));
+                m_vLights.emplace_back("UNNAMED");
                 ParseLV1ObjectBlock(m_vLights.back());
                 continue;
             }
             // camera object
             if (TokenMatch(filePtr, "CAMERAOBJECT", 12)) {
-                m_vCameras.push_back(Camera("UNNAMED"));
+                m_vCameras.emplace_back("UNNAMED");
                 ParseLV1ObjectBlock(m_vCameras.back());
                 continue;
             }
@@ -303,7 +314,6 @@ void Parser::Parse() {
         }
         AI_ASE_HANDLE_TOP_LEVEL_SECTION();
     }
-    return;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -344,8 +354,9 @@ void Parser::ParseLV1SoftSkinBlock() {
             unsigned int numVerts = 0;
 
             const char *sz = filePtr;
-            while (!IsSpaceOrNewLine(*filePtr))
+            while (!IsSpaceOrNewLine(*filePtr)) {
                 ++filePtr;
+            }
 
             const unsigned int diff = (unsigned int)(filePtr - sz);
             if (diff) {
@@ -363,28 +374,28 @@ void Parser::ParseLV1SoftSkinBlock() {
                     // Skip the mesh data - until we find a new mesh
                     // or the end of the *MESH_SOFTSKINVERTS section
                     while (true) {
-                        SkipSpacesAndLineEnd(&filePtr);
+                        SkipSpacesAndLineEnd(&filePtr, mEnd);
                         if (*filePtr == '}') {
                             ++filePtr;
                             return;
                         } else if (!IsNumeric(*filePtr))
                             break;
 
-                        SkipLine(&filePtr);
+                        SkipLine(&filePtr, mEnd);
                     }
                 } else {
-                    SkipSpacesAndLineEnd(&filePtr);
+                    SkipSpacesAndLineEnd(&filePtr, mEnd);
                     ParseLV4MeshLong(numVerts);
 
                     // Reserve enough storage
                     curMesh->mBoneVertices.reserve(numVerts);
 
                     for (unsigned int i = 0; i < numVerts; ++i) {
-                        SkipSpacesAndLineEnd(&filePtr);
+                        SkipSpacesAndLineEnd(&filePtr, mEnd);
                         unsigned int numWeights;
                         ParseLV4MeshLong(numWeights);
 
-                        curMesh->mBoneVertices.push_back(ASE::BoneVertex());
+                        curMesh->mBoneVertices.emplace_back();
                         ASE::BoneVertex &vert = curMesh->mBoneVertices.back();
 
                         // Reserve enough storage
@@ -408,7 +419,7 @@ void Parser::ParseLV1SoftSkinBlock() {
                             if (-1 == me.first) {
                                 // We don't have this bone yet, so add it to the list
                                 me.first = static_cast<int>(curMesh->mBones.size());
-                                curMesh->mBones.push_back(ASE::Bone(bone));
+                                curMesh->mBones.emplace_back(bone);
                             }
                             ParseLV4MeshFloat(me.second);
 
@@ -419,8 +430,10 @@ void Parser::ParseLV1SoftSkinBlock() {
                 }
             }
         }
+        if (*filePtr == '\0')
+            return;
         ++filePtr;
-        SkipSpacesAndLineEnd(&filePtr);
+        SkipSpacesAndLineEnd(&filePtr, mEnd);
     }
 }
 
@@ -477,6 +490,11 @@ void Parser::ParseLV1MaterialListBlock() {
             if (TokenMatch(filePtr, "MATERIAL_COUNT", 14)) {
                 ParseLV4MeshLong(iMaterialCount);
 
+                if (UINT_MAX - iOldMaterialCount < iMaterialCount) {
+                    LogWarning("Out of range: material index is too large");
+                    return;
+                }
+
                 // now allocate enough storage to hold all materials
                 m_vMaterials.resize(iOldMaterialCount + iMaterialCount, Material("INVALID"));
                 continue;
@@ -488,6 +506,7 @@ void Parser::ParseLV1MaterialListBlock() {
                 if (iIndex >= iMaterialCount) {
                     LogWarning("Out of range: material index is too large");
                     iIndex = iMaterialCount - 1;
+                    return;
                 }
 
                 // get a reference to the material
@@ -644,10 +663,13 @@ void Parser::ParseLV2MaterialBlock(ASE::Material &mat) {
                 }
 
                 // get a reference to the material
-                Material &sMat = mat.avSubMaterials[iIndex];
+                if (iIndex < mat.avSubMaterials.size()) {
+                    Material &sMat = mat.avSubMaterials[iIndex];
 
-                // parse the material block
-                ParseLV2MaterialBlock(sMat);
+                    // parse the material block
+                    ParseLV2MaterialBlock(sMat);
+                }
+
                 continue;
             }
         }
@@ -727,13 +749,12 @@ void Parser::ParseLV3MapBlock(Texture &map) {
         }
         AI_ASE_HANDLE_SECTION("3", "*MAP_XXXXXX");
     }
-    return;
 }
 
 // ------------------------------------------------------------------------------------------------
 bool Parser::ParseString(std::string &out, const char *szName) {
     char szBuffer[1024];
-    if (!SkipSpaces(&filePtr)) {
+    if (!SkipSpaces(&filePtr, mEnd)) {
 
         ai_snprintf(szBuffer, 1024, "Unable to parse %s block: Unexpected EOL", szName);
         LogWarning(szBuffer);
@@ -852,7 +873,6 @@ void Parser::ParseLV1ObjectBlock(ASE::BaseNode &node) {
         }
         AI_ASE_HANDLE_TOP_LEVEL_SECTION();
     }
-    return;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -876,7 +896,6 @@ void Parser::ParseLV2CameraSettingsBlock(ASE::Camera &camera) {
         }
         AI_ASE_HANDLE_SECTION("2", "CAMERA_SETTINGS");
     }
-    return;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -904,7 +923,6 @@ void Parser::ParseLV2LightSettingsBlock(ASE::Light &light) {
         }
         AI_ASE_HANDLE_SECTION("2", "LIGHT_SETTINGS");
     }
-    return;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1005,7 +1023,7 @@ void Parser::ParseLV3ScaleAnimationBlock(ASE::Animation &anim) {
                 anim.mScalingType = ASE::Animation::TCB;
             }
             if (b) {
-                anim.akeyScaling.push_back(aiVectorKey());
+                anim.akeyScaling.emplace_back();
                 aiVectorKey &key = anim.akeyScaling.back();
                 ParseLV4MeshFloatTriple(&key.mValue.x, iIndex);
                 key.mTime = (double)iIndex;
@@ -1044,7 +1062,7 @@ void Parser::ParseLV3PosAnimationBlock(ASE::Animation &anim) {
                 anim.mPositionType = ASE::Animation::TCB;
             }
             if (b) {
-                anim.akeyPositions.push_back(aiVectorKey());
+                anim.akeyPositions.emplace_back();
                 aiVectorKey &key = anim.akeyPositions.back();
                 ParseLV4MeshFloatTriple(&key.mValue.x, iIndex);
                 key.mTime = (double)iIndex;
@@ -1083,7 +1101,7 @@ void Parser::ParseLV3RotAnimationBlock(ASE::Animation &anim) {
                 anim.mRotationType = ASE::Animation::TCB;
             }
             if (b) {
-                anim.akeyRotations.push_back(aiQuatKey());
+                anim.akeyRotations.emplace_back();
                 aiQuatKey &key = anim.akeyRotations.back();
                 aiVector3D v;
                 ai_real f;
@@ -1183,7 +1201,6 @@ void Parser::ParseLV2NodeTransformBlock(ASE::BaseNode &mesh) {
         }
         AI_ASE_HANDLE_SECTION("2", "*NODE_TM");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV2MeshBlock(ASE::Mesh &mesh) {
@@ -1304,7 +1321,6 @@ void Parser::ParseLV2MeshBlock(ASE::Mesh &mesh) {
         }
         AI_ASE_HANDLE_SECTION("2", "*MESH");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshWeightsBlock(ASE::Mesh &mesh) {
@@ -1338,7 +1354,6 @@ void Parser::ParseLV3MeshWeightsBlock(ASE::Mesh &mesh) {
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_WEIGHTS");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV4MeshBones(unsigned int iNumBones, ASE::Mesh &mesh) {
@@ -1351,7 +1366,7 @@ void Parser::ParseLV4MeshBones(unsigned int iNumBones, ASE::Mesh &mesh) {
             // Mesh bone with name ...
             if (TokenMatch(filePtr, "MESH_BONE_NAME", 14)) {
                 // parse an index ...
-                if (SkipSpaces(&filePtr)) {
+                if (SkipSpaces(&filePtr, mEnd)) {
                     unsigned int iIndex = strtoul10(filePtr, &filePtr);
                     if (iIndex >= iNumBones) {
                         LogWarning("Bone index is out of bounds");
@@ -1391,11 +1406,11 @@ void Parser::ParseLV4MeshBonesVertices(unsigned int iNumVertices, ASE::Mesh &mes
                 std::pair<int, float> pairOut;
                 while (true) {
                     // first parse the bone index ...
-                    if (!SkipSpaces(&filePtr)) break;
+                    if (!SkipSpaces(&filePtr, mEnd)) break;
                     pairOut.first = strtoul10(filePtr, &filePtr);
 
                     // then parse the vertex weight
-                    if (!SkipSpaces(&filePtr)) break;
+                    if (!SkipSpaces(&filePtr, mEnd)) break;
                     filePtr = fast_atoreal_move<float>(filePtr, pairOut.second);
 
                     // -1 marks unused entries
@@ -1408,7 +1423,6 @@ void Parser::ParseLV4MeshBonesVertices(unsigned int iNumVertices, ASE::Mesh &mes
         }
         AI_ASE_HANDLE_SECTION("4", "*MESH_BONE_VERTEX");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshVertexListBlock(
@@ -1437,7 +1451,6 @@ void Parser::ParseLV3MeshVertexListBlock(
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_VERTEX_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshFaceListBlock(unsigned int iNumFaces, ASE::Mesh &mesh) {
@@ -1464,7 +1477,6 @@ void Parser::ParseLV3MeshFaceListBlock(unsigned int iNumFaces, ASE::Mesh &mesh) 
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_FACE_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshTListBlock(unsigned int iNumVertices,
@@ -1497,7 +1509,6 @@ void Parser::ParseLV3MeshTListBlock(unsigned int iNumVertices,
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_TVERT_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshTFaceListBlock(unsigned int iNumFaces,
@@ -1526,7 +1537,6 @@ void Parser::ParseLV3MeshTFaceListBlock(unsigned int iNumFaces,
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_TFACE_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MappingChannel(unsigned int iChannel, ASE::Mesh &mesh) {
@@ -1561,7 +1571,6 @@ void Parser::ParseLV3MappingChannel(unsigned int iChannel, ASE::Mesh &mesh) {
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_MAPPING_CHANNEL");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshCListBlock(unsigned int iNumVertices, ASE::Mesh &mesh) {
@@ -1589,7 +1598,6 @@ void Parser::ParseLV3MeshCListBlock(unsigned int iNumVertices, ASE::Mesh &mesh) 
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_CVERTEX_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshCFaceListBlock(unsigned int iNumFaces, ASE::Mesh &mesh) {
@@ -1617,7 +1625,6 @@ void Parser::ParseLV3MeshCFaceListBlock(unsigned int iNumFaces, ASE::Mesh &mesh)
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_CFACE_LIST");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV3MeshNormalListBlock(ASE::Mesh &sMesh) {
@@ -1675,12 +1682,11 @@ void Parser::ParseLV3MeshNormalListBlock(ASE::Mesh &sMesh) {
         }
         AI_ASE_HANDLE_SECTION("3", "*MESH_NORMALS");
     }
-    return;
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV4MeshFace(ASE::Face &out) {
     // skip spaces and tabs
-    if (!SkipSpaces(&filePtr)) {
+    if (!SkipSpaces(&filePtr, mEnd)) {
         LogWarning("Unable to parse *MESH_FACE Element: Unexpected EOL [#1]");
         SkipToNextToken();
         return;
@@ -1690,7 +1696,7 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
     out.iFace = strtoul10(filePtr, &filePtr);
 
     // next character should be ':'
-    if (!SkipSpaces(&filePtr)) {
+    if (!SkipSpaces(&filePtr, mEnd)) {
         // FIX: there are some ASE files which haven't got : here ....
         LogWarning("Unable to parse *MESH_FACE Element: Unexpected EOL. \':\' expected [#2]");
         SkipToNextToken();
@@ -1702,7 +1708,7 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
     // Parse all mesh indices
     for (unsigned int i = 0; i < 3; ++i) {
         unsigned int iIndex = 0;
-        if (!SkipSpaces(&filePtr)) {
+        if (!SkipSpaces(&filePtr, mEnd)) {
             LogWarning("Unable to parse *MESH_FACE Element: Unexpected EOL");
             SkipToNextToken();
             return;
@@ -1728,7 +1734,7 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
         ++filePtr;
 
         // next character should be ':'
-        if (!SkipSpaces(&filePtr) || ':' != *filePtr) {
+        if (!SkipSpaces(&filePtr, mEnd) || ':' != *filePtr) {
             LogWarning("Unable to parse *MESH_FACE Element: "
                        "Unexpected EOL. \':\' expected [#2]");
             SkipToNextToken();
@@ -1736,9 +1742,9 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
         }
 
         ++filePtr;
-        if (!SkipSpaces(&filePtr)) {
+        if (!SkipSpaces(&filePtr, mEnd)) {
             LogWarning("Unable to parse *MESH_FACE Element: Unexpected EOL. "
-                       "Vertex index ecpected [#4]");
+                       "Vertex index expected [#4]");
             SkipToNextToken();
             return;
         }
@@ -1757,7 +1763,7 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
 
     // parse the smoothing group of the face
     if (TokenMatch(filePtr, "*MESH_SMOOTHING", 15)) {
-        if (!SkipSpaces(&filePtr)) {
+        if (!SkipSpaces(&filePtr, mEnd)) {
             LogWarning("Unable to parse *MESH_SMOOTHING Element: "
                        "Unexpected EOL. Smoothing group(s) expected [#5]");
             SkipToNextToken();
@@ -1768,20 +1774,28 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
         // FIX: There needn't always be a value, sad but true
         while (true) {
             if (*filePtr < '9' && *filePtr >= '0') {
-                out.iSmoothGroup |= (1 << strtoul10(filePtr, &filePtr));
+                uint32_t value = strtoul10(filePtr, &filePtr);
+                if (value < 32) {
+                    out.iSmoothGroup |= (1 << strtoul10(filePtr, &filePtr));
+                } else {
+                    const std::string message = std::string("Unable to set smooth group, value with ") + ai_to_string(value) + std::string(" out of range");
+                    LogWarning(message.c_str());
+                }
             }
-            SkipSpaces(&filePtr);
+            SkipSpaces(&filePtr, mEnd);
             if (',' != *filePtr) {
                 break;
             }
             ++filePtr;
-            SkipSpaces(&filePtr);
+            SkipSpaces(&filePtr, mEnd);
         }
     }
 
     // *MESH_MTLID  is optional, too
     while (true) {
-        if ('*' == *filePtr) break;
+        if ('*' == *filePtr) {
+            break;
+        }
         if (IsLineEnd(*filePtr)) {
             return;
         }
@@ -1789,7 +1803,7 @@ void Parser::ParseLV4MeshFace(ASE::Face &out) {
     }
 
     if (TokenMatch(filePtr, "*MESH_MTLID", 11)) {
-        if (!SkipSpaces(&filePtr)) {
+        if (!SkipSpaces(&filePtr, mEnd)) {
             LogWarning("Unable to parse *MESH_MTLID Element: Unexpected EOL. "
                        "Material index expected [#6]");
             SkipToNextToken();
@@ -1830,13 +1844,14 @@ void Parser::ParseLV4MeshFloatTriple(ai_real *apOut, unsigned int &rIndexOut) {
 void Parser::ParseLV4MeshFloatTriple(ai_real *apOut) {
     ai_assert(nullptr != apOut);
 
-    for (unsigned int i = 0; i < 3; ++i)
+    for (unsigned int i = 0; i < 3; ++i) {
         ParseLV4MeshFloat(apOut[i]);
+    }
 }
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV4MeshFloat(ai_real &fOut) {
     // skip spaces and tabs
-    if (!SkipSpaces(&filePtr)) {
+    if (!SkipSpaces(&filePtr, mEnd)) {
         // LOG
         LogWarning("Unable to parse float: unexpected EOL [#1]");
         fOut = 0.0;
@@ -1849,7 +1864,7 @@ void Parser::ParseLV4MeshFloat(ai_real &fOut) {
 // ------------------------------------------------------------------------------------------------
 void Parser::ParseLV4MeshLong(unsigned int &iOut) {
     // Skip spaces and tabs
-    if (!SkipSpaces(&filePtr)) {
+    if (!SkipSpaces(&filePtr, mEnd)) {
         // LOG
         LogWarning("Unable to parse long: unexpected EOL [#1]");
         iOut = 0;
@@ -1858,6 +1873,8 @@ void Parser::ParseLV4MeshLong(unsigned int &iOut) {
     }
     // parse the value
     iOut = strtoul10(filePtr, &filePtr);
+}
+
 }
 
 #endif // ASSIMP_BUILD_NO_3DS_IMPORTER

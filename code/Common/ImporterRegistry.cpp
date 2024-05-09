@@ -3,7 +3,7 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2021, assimp team
+Copyright (c) 2006-2024, assimp team
 
 All rights reserved.
 
@@ -202,6 +202,9 @@ corresponding preprocessor flag to selectively disable formats.
 #ifndef ASSIMP_BUILD_NO_M3D_IMPORTER
 #include "AssetLib/M3D/M3DImporter.h"
 #endif
+#ifndef ASSIMP_BUILD_NO_IQM_IMPORTER
+#include "AssetLib/IQM/IQMImporter.h"
+#endif
 
 namespace Assimp {
 
@@ -211,7 +214,12 @@ void GetImporterInstanceList(std::vector<BaseImporter *> &out) {
     // Some importers may be unimplemented or otherwise unsuitable for general use
     // in their current state. Devs can set ASSIMP_ENABLE_DEV_IMPORTERS in their
     // local environment to enable them, otherwise they're left out of the registry.
+#if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP
+    // not supported under uwp
     const char *envStr = std::getenv("ASSIMP_ENABLE_DEV_IMPORTERS");
+#else
+    const char *envStr = { "0" };
+#endif
     bool devImportersEnabled = envStr && strcmp(envStr, "0");
 
     // Ensure no unused var warnings if all uses are #ifndef'd away below:
@@ -353,7 +361,7 @@ void GetImporterInstanceList(std::vector<BaseImporter *> &out) {
 #if (!defined ASSIMP_BUILD_NO_ASSBIN_IMPORTER)
     out.push_back(new AssbinImporter());
 #endif
-#if (!defined ASSIMP_BUILD_NO_GLTF_IMPORTER && !defined ASSIMP_BUILD_NO_GLTF1_IMPORTER)
+#if (!defined ASSIMP_BUILD_NO_GLTF_IMPORTER && !defined ASSIMP_BUILD_NO_GLTF1 && !defined ASSIMP_BUILD_NO_GLTF1_IMPORTER)
     out.push_back(new glTFImporter());
 #endif
 #if (!defined ASSIMP_BUILD_NO_GLTF_IMPORTER && !defined ASSIMP_BUILD_NO_GLTF2_IMPORTER)
@@ -371,9 +379,9 @@ void GetImporterInstanceList(std::vector<BaseImporter *> &out) {
 #ifndef ASSIMP_BUILD_NO_MMD_IMPORTER
     out.push_back(new MMDImporter());
 #endif
-    //#ifndef ASSIMP_BUILD_NO_STEP_IMPORTER
-    //    out.push_back(new StepFile::StepFileImporter());
-    //#endif
+#ifndef ASSIMP_BUILD_NO_IQM_IMPORTER
+    out.push_back(new IQMImporter());
+#endif
 }
 
 /** will delete all registered importers. */

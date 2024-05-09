@@ -2,7 +2,7 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2021, assimp team
+Copyright (c) 2006-2024, assimp team
 
 
 All rights reserved.
@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ----------------------------------------------------------------------
 */
+#ifndef ASSIMP_BUILD_NO_GLTF1
 #ifndef ASSIMP_BUILD_NO_EXPORT
 #ifndef ASSIMP_BUILD_NO_GLTF_EXPORTER
 
@@ -56,6 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assimp/Exporter.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
+#include <assimp/config.h>
 
 // Header files, standard library.
 #include <memory>
@@ -111,7 +113,11 @@ glTFExporter::glTFExporter(const char* filename, IOSystem* pIOSystem, const aiSc
 
     mScene.reset(sceneCopy_tmp);
 
-    mAsset.reset( new glTF::Asset( pIOSystem ) );
+    mAsset = std::make_shared<glTF::Asset>(pIOSystem);
+
+    configEpsilon = mProperties->GetPropertyFloat(
+        AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON,
+                (ai_real)AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT);
 
     if (isBinary) {
         mAsset->SetAsBinary();
@@ -322,7 +328,7 @@ void glTFExporter::GetTexSampler(const aiMaterial* mat, glTF::TexProperty& prop)
     prop.texture->sampler->minFilter = SamplerMinFilter_Linear;
 }
 
-void glTFExporter::GetMatColorOrTex(const aiMaterial* mat, glTF::TexProperty& prop, 
+void glTFExporter::GetMatColorOrTex(const aiMaterial* mat, glTF::TexProperty& prop,
         const char* propName, int type, int idx, aiTextureType tt) {
     aiString tex;
     aiColor4D col;
@@ -370,9 +376,9 @@ void glTFExporter::GetMatColorOrTex(const aiMaterial* mat, glTF::TexProperty& pr
     }
 
     if (mat->Get(propName, type, idx, col) == AI_SUCCESS) {
-        prop.color[0] = col.r; 
+        prop.color[0] = col.r;
         prop.color[1] = col.g;
-        prop.color[2] = col.b; 
+        prop.color[2] = col.b;
         prop.color[3] = col.a;
     }
 }
@@ -824,7 +830,7 @@ unsigned int glTFExporter::ExportNodeHierarchy(const aiNode* n)
 {
     Ref<Node> node = mAsset->nodes.Create(mAsset->FindUniqueID(n->mName.C_Str(), "node"));
 
-    if (!n->mTransformation.IsIdentity()) {
+    if (!n->mTransformation.IsIdentity(configEpsilon)) {
         node->matrix.isPresent = true;
         CopyValue(n->mTransformation, node->matrix.value);
     }
@@ -851,7 +857,7 @@ unsigned int glTFExporter::ExportNode(const aiNode* n, Ref<Node>& parent)
 
     node->parent = parent;
 
-    if (!n->mTransformation.IsIdentity()) {
+    if (!n->mTransformation.IsIdentity(configEpsilon)) {
         node->matrix.isPresent = true;
         CopyValue(n->mTransformation, node->matrix.value);
     }
@@ -1063,3 +1069,4 @@ void glTFExporter::ExportAnimations()
 
 #endif // ASSIMP_BUILD_NO_GLTF_EXPORTER
 #endif // ASSIMP_BUILD_NO_EXPORT
+#endif // ASSIMP_BUILD_NO_GLTF1
